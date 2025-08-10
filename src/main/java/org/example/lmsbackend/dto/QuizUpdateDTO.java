@@ -26,7 +26,7 @@ public class QuizUpdateDTO {
     
     public Boolean getAllowMultipleAttempts() { return allowMultipleAttempts; }
     public void setAllowMultipleAttempts(Boolean allowMultipleAttempts) { this.allowMultipleAttempts = allowMultipleAttempts; }
-
+    
     public Double getTotalMarks() { return totalMarks; }
     public void setTotalMarks(Double totalMarks) { this.totalMarks = totalMarks; }
     

@@ -43,12 +43,13 @@ public class QuizzesService {
         quiz.setTimeLimit(dto.getTimeLimit());
         quiz.setShuffleAnswers(dto.getShuffleAnswers());
         quiz.setAllowMultipleAttempts(dto.getAllowMultipleAttempts());
+        quiz.setMaxAttempts(dto.getMaxAttempts() != null ? dto.getMaxAttempts() : 2);
         quiz.setShowQuizResponses(dto.getShowQuizResponses());
         quiz.setShowOneQuestionAtATime(dto.getShowOneQuestionAtATime());
         
         // Ensure publish is never null - default to false if not provided
         quiz.setPublish(dto.getPublish() != null ? dto.getPublish() : false);
-
+        
         // Set course relationship properly
         if (dto.getCourseId() != null) {
             Course course = courseRepository.findById(dto.getCourseId())
@@ -88,7 +89,7 @@ public class QuizzesService {
 
     public List<QuizzesDTO> getQuizzesByCourse(Integer courseId, Boolean publish, Boolean withoutModule) {
         List<Quizzes> entities;
-
+        
         if (withoutModule != null && withoutModule) {
             // Get quizzes without module (moduleId is null)
             if (publish != null && publish) {
@@ -138,6 +139,7 @@ public class QuizzesService {
         quiz.setTimeLimit(dto.getTimeLimit());
         quiz.setShuffleAnswers(dto.getShuffleAnswers());
         quiz.setAllowMultipleAttempts(dto.getAllowMultipleAttempts());
+        quiz.setMaxAttempts(dto.getMaxAttempts() != null ? dto.getMaxAttempts() : 2);
         quiz.setShowQuizResponses(dto.getShowQuizResponses());
         quiz.setShowOneQuestionAtATime(dto.getShowOneQuestionAtATime());
         quiz.setPublish(dto.getPublish());
@@ -202,6 +204,7 @@ public class QuizzesService {
         dto.setTimeLimit(quiz.getTimeLimit());
         dto.setShuffleAnswers(quiz.getShuffleAnswers());
         dto.setAllowMultipleAttempts(quiz.getAllowMultipleAttempts());
+        dto.setMaxAttempts(quiz.getMaxAttempts());
         dto.setShowQuizResponses(quiz.getShowQuizResponses());
         dto.setShowOneQuestionAtATime(quiz.getShowOneQuestionAtATime());
         dto.setPublish(quiz.getPublish());
@@ -229,17 +232,17 @@ public class QuizzesService {
         System.out.println("=== Updating Quiz Status ===");
         System.out.println("Quiz ID: " + quizId);
         System.out.println("New Status: " + (publish ? "Published" : "Not Published"));
-
+        
         Quizzes quiz = quizzesRepository.findById(quizId)
             .orElseThrow(() -> new RuntimeException("Quiz not found with ID: " + quizId));
-
+        
         boolean oldStatus = quiz.getPublish() != null ? quiz.getPublish() : false;
         System.out.println("Old Status: " + (oldStatus ? "Published" : "Not Published"));
-
+        
         quiz.setPublish(publish);
         Quizzes savedQuiz = quizzesRepository.save(quiz);
-
-        System.out.println("✅ Quiz status updated. New status: " +
+        
+        System.out.println("✅ Quiz status updated. New status: " + 
             (savedQuiz.getPublish() ? "Published" : "Not Published"));
     }
 
@@ -261,6 +264,7 @@ public class QuizzesService {
             dto.setTimeLimit(q.getTimeLimit());
             dto.setShuffleAnswers(q.getShuffleAnswers());
             dto.setAllowMultipleAttempts(q.getAllowMultipleAttempts());
+            dto.setMaxAttempts(q.getMaxAttempts());
             dto.setShowQuizResponses(q.getShowQuizResponses());
             dto.setShowOneQuestionAtATime(q.getShowOneQuestionAtATime());
             dto.setPublish(q.getPublish());
@@ -279,7 +283,7 @@ public class QuizzesService {
                 if (oldStatus != published) {
                     quiz.setPublish(published);
                     quizzesRepository.save(quiz);
-                    System.out.println("Quiz '" + quiz.getTitle() + "' status changed from " +
+                    System.out.println("Quiz '" + quiz.getTitle() + "' status changed from " + 
                         oldStatus + " to " + published);
                 }
             }

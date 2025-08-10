@@ -14,7 +14,7 @@ public interface QuizzesRepository extends JpaRepository<Quizzes, Integer> {
     // Methods for quizzes without module (moduleId is null)
     List<Quizzes> findByCourseIdAndModuleIsNull(Integer courseId);
     List<Quizzes> findByCourseIdAndPublishTrueAndModuleIsNull(Integer courseId);
-
+    
     // Thêm methods cho module
     List<Quizzes> findByModuleId(Integer moduleId);
     List<Quizzes> findByModuleIdAndPublishTrue(Integer moduleId);
