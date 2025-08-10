@@ -156,25 +156,21 @@ public class UserRestController {
         return ResponseEntity.ok(users);
     }
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('admin', 'instructor', 'student')")
-    public ResponseEntity<?> getUserById(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails currentUser) {
+    public ResponseEntity<?> getUserById(@PathVariable Long id) {
         try {
-            // ✅ Nếu người dùng không phải admin → chỉ được xem chính họ
-            if (!currentUser.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_admin"))
-                    && !currentUser.getUserId().equals(id)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "Access denied"));
-            }
-
             User user = userService.getUserById(id);
             if (user != null) {
                 return ResponseEntity.ok(user);
             } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "User not found"));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "User not found"));
             }
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Error retrieving user"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error retrieving user"));
         }
     }
+
 
     @GetMapping("/profile")
     public ResponseEntity<?> getCurrentUserProfile(@AuthenticationPrincipal CustomUserDetails userDetails) {
