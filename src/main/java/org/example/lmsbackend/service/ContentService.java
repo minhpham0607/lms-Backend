@@ -20,6 +20,9 @@ public class ContentService {
     @Autowired
     private ModulesService modulesService;
 
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
     // ✅ Tạo content mới
     public Content createContent(int moduleId, String title, String contentType, String description, 
                                 String contentUrl, int orderNumber, boolean isPublished, MultipartFile file) throws IOException {
@@ -50,17 +53,14 @@ public class ContentService {
         
         // Handle file upload if provided
         if (file != null && !file.isEmpty()) {
-            String uploadDir = "uploads/modules/" + moduleId;
-            Files.createDirectories(Paths.get(uploadDir));
-            
+            // Upload to Cloudinary instead of local storage
+            String cloudinaryUrl = cloudinaryService.uploadDocument(file, "modules");
             String fileName = file.getOriginalFilename();
-            Path path = Paths.get(uploadDir, fileName);
-            file.transferTo(path);
             
             content.setFileName(fileName);
             // Only set contentUrl from file if no URL was provided
             if (contentUrl == null || contentUrl.trim().isEmpty()) {
-                content.setContentUrl("/" + path.toString().replace("\\", "/"));
+                content.setContentUrl(cloudinaryUrl);
             }
         }
         
@@ -90,20 +90,15 @@ public class ContentService {
             throw new RuntimeException("You are not allowed to upload to this module");
         }
 
-        // Tạo thư mục lưu file
-        String uploadDir = "uploads/modules/" + moduleId;
-        Files.createDirectories(Paths.get(uploadDir));
-
-        // Lưu file
-        Path path = Paths.get(uploadDir, file.getOriginalFilename());
-        file.transferTo(path);
+        // Upload file to Cloudinary
+        String cloudinaryUrl = cloudinaryService.uploadDocument(file, "modules");
 
         // Tạo Content
         Content content = new Content();
         content.setTitle(file.getOriginalFilename());
         content.setType("document");
         content.setFileName(file.getOriginalFilename());
-        content.setContentUrl("/" + path.toString().replace("\\", "/")); // chuẩn hóa URL
+        content.setContentUrl(cloudinaryUrl);
         content.setModule(module);
         content.setOrderNumber(getNextOrderNumber(moduleId));
         content.setDuration(null);
@@ -248,19 +243,16 @@ public class ContentService {
         // Handle file upload
         if (file != null && !file.isEmpty()) {
             try {
-                String uploadDir = "uploads/modules/" + content.getModule().getId();
-                Files.createDirectories(Paths.get(uploadDir));
-                
+                // Upload to Cloudinary
+                String cloudinaryUrl = cloudinaryService.uploadDocument(file, "modules");
                 String fileName = file.getOriginalFilename();
-                Path path = Paths.get(uploadDir, fileName);
-                file.transferTo(path);
                 
                 // Update content URL và file name
-                content.setContentUrl("/" + uploadDir + "/" + fileName);
+                content.setContentUrl(cloudinaryUrl);
                 content.setFileName(fileName);
                 
                 System.out.println("✅ File uploaded successfully: " + content.getContentUrl());
-            } catch (IOException e) {
+            } catch (Exception e) {
                 throw new RuntimeException("Could not upload file: " + e.getMessage());
             }
         }

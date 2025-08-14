@@ -151,6 +151,16 @@ public class QuizzesService {
             quiz.setCourse(course);
         }
         
+        // Set module relationship if provided
+        if (dto.getModuleId() != null) {
+            Modules module = new Modules();
+            module.setId(dto.getModuleId());
+            quiz.setModule(module);
+        } else {
+            // If no module is specified, remove module association
+            quiz.setModule(null);
+        }
+
         quizzesRepository.save(quiz);
     }
 
@@ -210,6 +220,11 @@ public class QuizzesService {
         dto.setPublish(quiz.getPublish());
         dto.setCourseId(quiz.getCourseId());
         
+        // Set moduleId if quiz belongs to a module
+        if (quiz.getModule() != null) {
+            dto.setModuleId(quiz.getModule().getId());
+        }
+
         return dto;
     }
 

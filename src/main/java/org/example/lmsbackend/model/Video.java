@@ -14,7 +14,7 @@ public class Video {
     private String title;
     private String description;
 
-    @Column(name = "file_url", nullable = false)
+    @Column(name = "file_url", nullable = false, length = 512)
     private String fileUrl;
 
     private Integer duration; // in seconds

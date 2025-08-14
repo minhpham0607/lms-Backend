@@ -131,11 +131,9 @@ public class UserService {
         if (avatarFile != null && !avatarFile.isEmpty()) {
             existingUser.setAvatarUrl(saveAvatar(avatarFile));
         } else if (existingUser.getAvatarUrl() == null || existingUser.getAvatarUrl().trim().isEmpty()) {
-            // ✅ Nếu chưa có avatar, sử dụng avatar mặc định
-            existingUser.setAvatarUrl("/uploads/avatars/default.png");
-        }
-
-        // ✅ Cập nhật CV nếu có
+        // ✅ Nếu chưa có avatar, sử dụng avatar mặc định
+        existingUser.setAvatarUrl("https://res.cloudinary.com/your_cloud_name/image/upload/v1/avatars/default.png");
+    }        // ✅ Cập nhật CV nếu có
         if (StringUtils.hasText(userDTO.getCvUrl())) {
             existingUser.setCvUrl(userDTO.getCvUrl());
         }
@@ -143,22 +141,14 @@ public class UserService {
         return userMapper.updateUser(existingUser) > 0;
     }
 
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
     // ✅ Lưu file avatar
     private String saveAvatar(MultipartFile file) {
         try {
-            String uploadDir = "uploads/avatars";
-            Path uploadPath = Paths.get(uploadDir);
-            Files.createDirectories(uploadPath);
-
-            String originalFilename = file.getOriginalFilename();
-            String cleanedFilename = originalFilename != null ? originalFilename.replaceAll("\\s+", "_") : "avatar.png";
-            String filename = UUID.randomUUID() + "_" + cleanedFilename;
-
-            Path filePath = uploadPath.resolve(filename);
-            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-            return "/uploads/avatars/" + filename;
-        } catch (IOException e) {
+            return cloudinaryService.uploadImage(file, "avatars");
+        } catch (Exception e) {
             throw new RuntimeException("Lỗi khi lưu file avatar", e);
         }
     }

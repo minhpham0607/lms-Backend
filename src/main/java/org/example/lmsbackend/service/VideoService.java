@@ -97,16 +97,21 @@ public class VideoService {
             video.setMimeType(file.getContentType());
             video.setPublished(published != null ? published : false); // Set published status
 
-            // Extract video duration using JAVE2
+            // Extract video duration (skip for Cloudinary URLs)
             try {
-                // Construct the full file path for duration extraction
-                String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
-                String fullFilePath = "uploads/videos/" + fileName;
-
-                long durationInSeconds = VideoMetadataExtractor.extractDuration(fullFilePath);
-                video.setDuration((int) durationInSeconds); // Cast to Integer
-
-                System.out.println("📹 Video uploaded with duration: " + durationInSeconds + " seconds");
+                // For Cloudinary URLs, we can't extract duration locally
+                // You might want to use Cloudinary's video analysis API or skip this
+                if (fileUrl.contains("cloudinary.com")) {
+                    video.setDuration(0); // Or implement Cloudinary video analysis
+                    System.out.println("📹 Video uploaded to Cloudinary, duration extraction skipped");
+                } else {
+                    // Construct the full file path for duration extraction (legacy support)
+                    String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+                    String fullFilePath = "uploads/videos/" + fileName;
+                    long durationInSeconds = VideoMetadataExtractor.extractDuration(fullFilePath);
+                    video.setDuration((int) durationInSeconds);
+                    System.out.println("📹 Video uploaded with duration: " + durationInSeconds + " seconds");
+                }
             } catch (Exception e) {
                 System.err.println("❌ Failed to extract video duration: " + e.getMessage());
                 // Continue with upload even if duration extraction fails
@@ -164,27 +169,37 @@ public class VideoService {
                 return null;
             }
             
+            // Check if it's a Cloudinary URL (starts with http/https)
+            if (video.getFileUrl().startsWith("http://") || video.getFileUrl().startsWith("https://")) {
+                System.out.println("🌐 Video is hosted on Cloudinary: " + video.getFileUrl());
+                // For Cloudinary URLs, create a resource directly from the URL
+                Resource resource = new UrlResource(video.getFileUrl());
+                System.out.println("✅ Created Cloudinary resource");
+                return resource;
+            }
+
+            // Legacy logic for local files
             // video.getFileUrl() = "/videos/filename.mp4"
             // Extract just the filename from the fileUrl
             String fileName = video.getFileUrl().substring(video.getFileUrl().lastIndexOf("/") + 1);
             
             // Construct correct path: uploads/videos/filename.mp4
             Path filePath = Paths.get("uploads/videos/" + fileName);
-            System.out.println("🎯 Looking for file at: " + filePath.toAbsolutePath());
-            
+            System.out.println("🎯 Looking for local file at: " + filePath.toAbsolutePath());
+
             if (!Files.exists(filePath)) {
-                System.out.println("❌ File does not exist at: " + filePath.toAbsolutePath());
+                System.out.println("❌ Local file does not exist at: " + filePath.toAbsolutePath());
                 return null;
             }
             
-            System.out.println("✅ File found, creating resource");
+            System.out.println("✅ Local file found, creating resource");
             Resource resource = new UrlResource(filePath.toUri());
             
             if (resource.exists() && resource.isReadable()) {
-                System.out.println("✅ Resource is readable");
+                System.out.println("✅ Local resource is readable");
                 return resource;
             } else {
-                System.out.println("❌ Resource exists but not readable");
+                System.out.println("❌ Local resource exists but not readable");
                 return null;
             }
         } catch (Exception e) {
@@ -194,23 +209,11 @@ public class VideoService {
         }
     }
 
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
     public String saveFile(MultipartFile file) {
-        try {
-            String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-            Path uploadPath = Paths.get("uploads/videos");
-            
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-            
-            Path filePath = uploadPath.resolve(fileName);
-            Files.copy(file.getInputStream(), filePath);
-            
-            return "/videos/" + fileName;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
+        return cloudinaryService.uploadVideo(file, "videos");
     }
 
     // Video management methods

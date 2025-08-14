@@ -41,11 +41,11 @@ public class EnrollmentsService {
     public boolean isStudentEnrolled(int userId, int courseId) {
         return enrollmentMapper.countEnrollment(userId, courseId) > 0;
     }
-    
+
     public boolean isUserEnrolledInCourse(Integer userId, Integer courseId) {
         return enrollmentMapper.countEnrollment(userId, courseId) > 0;
     }
-    
+
     public List<EnrollmentsDTO> getAllEnrollments() {
         return enrollmentMapper.getAllEnrollments();
     }

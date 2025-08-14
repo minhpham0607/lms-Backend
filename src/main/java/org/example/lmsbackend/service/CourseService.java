@@ -55,22 +55,19 @@ public class CourseService {
     public boolean isInstructorOfCourse(int instructorId, int courseId) {
         return courseMapper.countByInstructorAndCourse(instructorId, courseId) > 0;
     }
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
     public boolean updateCourse(Course course, MultipartFile imageFile) {
         try {
             if (imageFile != null && !imageFile.isEmpty()) {
-                // 👉 Lưu ảnh vào thư mục uploads/imagescourse/
-                String originalFilename = imageFile.getOriginalFilename();
-                String filename = UUID.randomUUID() + "_" + originalFilename;
-                Path filePath = Paths.get("uploads", "imagescourse", filename);
-                Files.createDirectories(filePath.getParent());
-                Files.copy(imageFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-                // 👉 Gán tên ảnh vào khóa học (chỉ lưu tên file, không lưu đường dẫn đầy đủ)
-                course.setThumbnailUrl(filename);
+                // Upload ảnh lên Cloudinary
+                String cloudinaryUrl = cloudinaryService.uploadImage(imageFile, "imagescourse");
+                course.setThumbnailUrl(cloudinaryUrl);
             }
 
             return courseMapper.updateCourse(course) > 0;
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
@@ -98,26 +95,8 @@ public class CourseService {
     */
     private String saveImage(MultipartFile file) {
         try {
-            String uploadDir = "uploads/imagescourse";
-            Path uploadPath = Paths.get(uploadDir);
-
-            // Tạo thư mục nếu chưa tồn tại
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-
-            // Đặt tên file duy nhất (loại bỏ khoảng trắng)
-            String originalFilename = file.getOriginalFilename();
-            String cleanedFilename = originalFilename != null ? originalFilename.replaceAll("\\s+", "_") : "image.png";
-            String filename = UUID.randomUUID() + "_" + cleanedFilename;
-
-            Path filePath = uploadPath.resolve(filename);
-
-            // Ghi file
-            Files.copy(file.getInputStream(), filePath);
-
-            return filename; // ✅ Trả về chỉ tên file để frontend dùng đúng URL
-        } catch (IOException e) {
+            return cloudinaryService.uploadImage(file, "imagescourse");
+        } catch (Exception e) {
             throw new RuntimeException("Lỗi khi lưu file ảnh", e);
         }
     }

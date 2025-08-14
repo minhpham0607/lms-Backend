@@ -5,6 +5,7 @@ import org.example.lmsbackend.service.DiscussionReplyService;
 import org.example.lmsbackend.service.EnrollmentsService;
 import org.example.lmsbackend.service.DiscussionService;
 import org.example.lmsbackend.service.CourseService;
+import org.example.lmsbackend.service.CloudinaryService;
 import org.example.lmsbackend.security.CustomUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,6 +42,9 @@ public class DiscussionReplyController {
     @Autowired
     private CourseService courseService;
 
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
 
@@ -49,6 +53,9 @@ public class DiscussionReplyController {
     @PreAuthorize("hasRole('admin') or hasRole('instructor') or hasRole('student')")
     public ResponseEntity<?> createReply(@RequestBody DiscussionReplyDTO dto, Authentication auth) {
         try {
+            System.out.println("? Creating reply - User: " + dto.getUserId() + ", DiscussionId: " + dto.getDiscussionId());
+            System.out.println("? Parent Reply ID: " + dto.getParentReplyId() + " (null = root reply, not null = nested reply)");
+
             // Kiểm tra quyền: user phải được enroll vào course chứa discussion
             var discussionDTO = discussionService.getDiscussionById(dto.getDiscussionId());
             if (discussionDTO == null) {
@@ -74,6 +81,7 @@ public class DiscussionReplyController {
                 return ResponseEntity.badRequest().body(Map.of("message", "Failed to create reply"));
             }
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Error creating reply: " + e.getMessage()));
         }
@@ -87,6 +95,7 @@ public class DiscussionReplyController {
             List<DiscussionReplyDTO> replies = discussionReplyService.getRepliesByDiscussionId(discussionId);
             return ResponseEntity.ok(replies);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
@@ -99,6 +108,7 @@ public class DiscussionReplyController {
             Long count = discussionReplyService.getReplyCount(discussionId);
             return ResponseEntity.ok(Map.of("count", count));
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
@@ -116,6 +126,7 @@ public class DiscussionReplyController {
                         .body(Map.of("message", "Bạn không có quyền xóa trả lời này"));
             }
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Error deleting reply: " + e.getMessage()));
         }
@@ -130,6 +141,12 @@ public class DiscussionReplyController {
                                            @RequestParam("discussionId") Integer discussionId,
                                            @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
+            System.out.println("=== Reply File Upload Request ===");
+            System.out.println("Discussion ID: " + discussionId);
+            System.out.println("User ID: " + userDetails.getUserId());
+            System.out.println("File name: " + file.getOriginalFilename());
+            System.out.println("File size: " + file.getSize() + " bytes");
+
             // Validate file
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
@@ -181,43 +198,28 @@ public class DiscussionReplyController {
                 ));
             }
 
-            // Create directory structure: uploads/discussions/{courseId}/{discussionId}/replies/
-            String dirPath = uploadDir + File.separator + "discussions" + File.separator + 
-                           courseId + File.separator + discussionId + File.separator + "replies";
-            
-            Path uploadPath = Paths.get(dirPath);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-
-            // Generate unique filename
-            String originalFilename = file.getOriginalFilename();
-            String fileExtension = getFileExtension(originalFilename);
-            String uniqueFilename = "reply_" + UUID.randomUUID().toString() + fileExtension;
-            
-            // Save file
-            Path filePath = uploadPath.resolve(uniqueFilename);
-            Files.copy(file.getInputStream(), filePath);
+            // Upload file to Cloudinary instead of local storage
+            String cloudinaryUrl = cloudinaryService.uploadDocument(file, "discussions/replies");
+            System.out.println("✅ Reply file uploaded to Cloudinary: " + cloudinaryUrl);
 
             // Create file URL
-            String fileUrl = "/api/discussion-replies/download/" + courseId + "/" + discussionId + "/" + uniqueFilename;
+            String fileUrl = cloudinaryUrl;
+
+            System.out.println("File URL: " + fileUrl);
 
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "File uploaded successfully",
-                "fileName", originalFilename,
+                "fileName", file.getOriginalFilename(),
                 "fileUrl", fileUrl
             ));
 
-        } catch (IOException e) {
+        } catch (Exception e) {
+            System.err.println("File upload error: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of(
                 "success", false,
                 "message", "Lỗi khi lưu file: " + e.getMessage()
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of(
-                "success", false,
-                "message", "Lỗi không mong muốn: " + e.getMessage()
             ));
         }
     }
@@ -265,8 +267,10 @@ public class DiscussionReplyController {
                     .body(content);
 
         } catch (IOException e) {
+            System.err.println("File download error: " + e.getMessage());
             return ResponseEntity.status(500).body("Lỗi khi tải file");
         } catch (Exception e) {
+            System.err.println("Unexpected error during file download: " + e.getMessage());
             return ResponseEntity.status(500).body("Lỗi không mong muốn");
         }
     }

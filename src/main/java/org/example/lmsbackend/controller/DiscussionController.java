@@ -4,6 +4,7 @@ import org.example.lmsbackend.dto.DiscussionDTO;
 import org.example.lmsbackend.service.DiscussionService;
 import org.example.lmsbackend.service.CourseService;
 import org.example.lmsbackend.service.EnrollmentsService;
+import org.example.lmsbackend.service.CloudinaryService;
 import org.example.lmsbackend.security.CustomUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +32,8 @@ public class DiscussionController {
     private CourseService courseService;
     @Autowired
     private EnrollmentsService enrollmentsService;
+    @Autowired
+    private CloudinaryService cloudinaryService;
 
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
@@ -120,6 +123,12 @@ public class DiscussionController {
                                                 @RequestParam("courseId") Integer courseId,
                                                 @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
+            System.out.println("=== Discussion File Upload Request ===");
+            System.out.println("Course ID: " + courseId);
+            System.out.println("User ID: " + userDetails.getUserId());
+            System.out.println("File name: " + file.getOriginalFilename());
+            System.out.println("File size: " + file.getSize() + " bytes");
+
             // Validate file
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
@@ -160,47 +169,27 @@ public class DiscussionController {
                 ));
             }
 
-            // Create directory structure: uploads/discussions/{courseId}/{userId}
-            String discussionDir = uploadDir + File.separator + "discussions" + File.separator + 
-                                 courseId + File.separator + userDetails.getUserId();
-            
-            Path uploadPath = Paths.get(discussionDir);
-            
-            // Create directories if they don't exist
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
+            // Upload file to Cloudinary instead of local storage
+            String cloudinaryUrl = cloudinaryService.uploadDocument(file, "discussions");
+            System.out.println("✅ File uploaded to Cloudinary: " + cloudinaryUrl);
 
-            // Generate unique filename to avoid conflicts
-            String originalFilename = file.getOriginalFilename();
-            String fileExtension = getFileExtension(originalFilename);
-            String uniqueFilename = "discussion_" + UUID.randomUUID().toString() + fileExtension;
-            
-            // Save file
-            Path filePath = uploadPath.resolve(uniqueFilename);
-            Files.copy(file.getInputStream(), filePath);
-
-            // Return file information
-            String fileUrl = "/api/discussions/download/" + courseId + "/" + userDetails.getUserId() + "/" + uniqueFilename;
+            // Return file information with Cloudinary URL
+            String fileUrl = cloudinaryUrl;
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "File upload thành công",
-                "fileName", originalFilename,
-                "savedFileName", uniqueFilename,
+                "fileName", file.getOriginalFilename(),
                 "fileUrl", fileUrl,
                 "fileSize", file.getSize()
             ));
 
-        } catch (IOException e) {
+        } catch (Exception e) {
+            System.err.println("❌ Error uploading file: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
                 "message", "Lỗi khi upload file: " + e.getMessage()
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of(
-                "success", false,
-                "message", "Lỗi không xác định: " + e.getMessage()
             ));
         }
     }
@@ -215,6 +204,12 @@ public class DiscussionController {
                                                    @PathVariable String filename,
                                                    @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
+            System.out.println("=== Download Discussion File Request ===");
+            System.out.println("Course ID: " + courseId);
+            System.out.println("User ID: " + userId);
+            System.out.println("Filename: " + filename);
+            System.out.println("Requesting User ID: " + userDetails.getUserId());
+
             // Check course access permission
             if (userDetails.hasRole("instructor") && !courseService.isInstructorOfCourse(userDetails.getUserId(), courseId)) {
                 return ResponseEntity.status(403).body(Map.of(
@@ -253,11 +248,15 @@ public class DiscussionController {
                     .body(fileContent);
 
         } catch (IOException e) {
+            System.err.println("❌ Error downloading file: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
                 "message", "Lỗi khi tải file: " + e.getMessage()
             ));
         } catch (Exception e) {
+            System.err.println("❌ Unexpected error: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
                 "message", "Lỗi không xác định: " + e.getMessage()
