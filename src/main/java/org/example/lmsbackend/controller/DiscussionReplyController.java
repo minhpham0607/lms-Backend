@@ -49,9 +49,6 @@ public class DiscussionReplyController {
     @PreAuthorize("hasRole('admin') or hasRole('instructor') or hasRole('student')")
     public ResponseEntity<?> createReply(@RequestBody DiscussionReplyDTO dto, Authentication auth) {
         try {
-            System.out.println("? Creating reply - User: " + dto.getUserId() + ", DiscussionId: " + dto.getDiscussionId());
-            System.out.println("? Parent Reply ID: " + dto.getParentReplyId() + " (null = root reply, not null = nested reply)");
-            
             // Kiểm tra quyền: user phải được enroll vào course chứa discussion
             var discussionDTO = discussionService.getDiscussionById(dto.getDiscussionId());
             if (discussionDTO == null) {
@@ -77,7 +74,6 @@ public class DiscussionReplyController {
                 return ResponseEntity.badRequest().body(Map.of("message", "Failed to create reply"));
             }
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Error creating reply: " + e.getMessage()));
         }
@@ -91,7 +87,6 @@ public class DiscussionReplyController {
             List<DiscussionReplyDTO> replies = discussionReplyService.getRepliesByDiscussionId(discussionId);
             return ResponseEntity.ok(replies);
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
@@ -104,7 +99,6 @@ public class DiscussionReplyController {
             Long count = discussionReplyService.getReplyCount(discussionId);
             return ResponseEntity.ok(Map.of("count", count));
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
@@ -122,7 +116,6 @@ public class DiscussionReplyController {
                         .body(Map.of("message", "Bạn không có quyền xóa trả lời này"));
             }
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Error deleting reply: " + e.getMessage()));
         }
@@ -137,12 +130,6 @@ public class DiscussionReplyController {
                                            @RequestParam("discussionId") Integer discussionId,
                                            @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
-            System.out.println("=== Reply File Upload Request ===");
-            System.out.println("Discussion ID: " + discussionId);
-            System.out.println("User ID: " + userDetails.getUserId());
-            System.out.println("File name: " + file.getOriginalFilename());
-            System.out.println("File size: " + file.getSize() + " bytes");
-
             // Validate file
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
@@ -215,9 +202,6 @@ public class DiscussionReplyController {
             // Create file URL
             String fileUrl = "/api/discussion-replies/download/" + courseId + "/" + discussionId + "/" + uniqueFilename;
 
-            System.out.println("File saved to: " + filePath.toString());
-            System.out.println("File URL: " + fileUrl);
-
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "File uploaded successfully",
@@ -226,15 +210,11 @@ public class DiscussionReplyController {
             ));
 
         } catch (IOException e) {
-            System.err.println("File upload error: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of(
                 "success", false,
                 "message", "Lỗi khi lưu file: " + e.getMessage()
             ));
         } catch (Exception e) {
-            System.err.println("Unexpected error during file upload: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of(
                 "success", false,
                 "message", "Lỗi không mong muốn: " + e.getMessage()
@@ -285,10 +265,8 @@ public class DiscussionReplyController {
                     .body(content);
 
         } catch (IOException e) {
-            System.err.println("File download error: " + e.getMessage());
             return ResponseEntity.status(500).body("Lỗi khi tải file");
         } catch (Exception e) {
-            System.err.println("Unexpected error during file download: " + e.getMessage());
             return ResponseEntity.status(500).body("Lỗi không mong muốn");
         }
     }

@@ -29,11 +29,6 @@ public class GradesController {
                                                 @RequestParam(defaultValue = "ALL") String type,
                                                 @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
-            System.out.println("=== Instructor Grades Request ===");
-            System.out.println("Course ID: " + courseId);
-            System.out.println("Type: " + type);
-            System.out.println("User ID: " + userDetails.getUserId());
-
             List<GradeDTO> grades = gradesService.getInstructorGrades(courseId, type);
             
             return ResponseEntity.ok(Map.of(
@@ -42,8 +37,6 @@ public class GradesController {
             ));
 
         } catch (Exception e) {
-            System.out.println("❌ Error getting instructor grades: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
                 "message", "Lỗi khi lấy danh sách điểm: " + e.getMessage()
@@ -58,9 +51,6 @@ public class GradesController {
     @PreAuthorize("hasAnyRole('student', 'instructor', 'admin')")
     public ResponseEntity<?> getStudentGrades(@AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
-            System.out.println("=== Student Grades Request ===");
-            System.out.println("User ID: " + userDetails.getUserId());
-
             List<GradeDTO> grades = gradesService.getStudentGrades(userDetails.getUserId());
             
             return ResponseEntity.ok(Map.of(
@@ -69,8 +59,6 @@ public class GradesController {
             ));
 
         } catch (Exception e) {
-            System.out.println("❌ Error getting student grades: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
                 "message", "Lỗi khi lấy điểm của sinh viên: " + e.getMessage()
@@ -86,9 +74,6 @@ public class GradesController {
     public ResponseEntity<?> gradeEssay(@RequestBody Map<String, Object> gradeData,
                                        @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
-            System.out.println("=== Grade Essay Request ===");
-            System.out.println("Grade Data: " + gradeData);
-
             Integer userAnswerId = (Integer) gradeData.get("userAnswerId");
             Integer score = (Integer) gradeData.get("score");
             String feedback = (String) gradeData.get("feedback");
@@ -108,8 +93,6 @@ public class GradesController {
             }
 
         } catch (Exception e) {
-            System.out.println("❌ Error grading essay: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
                 "message", "Lỗi khi chấm điểm: " + e.getMessage()
@@ -125,8 +108,6 @@ public class GradesController {
     public ResponseEntity<?> getEssayDetails(@PathVariable Integer userAnswerId,
                                            @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
-            System.out.println("=== Get Essay Details Request ===");
-            System.out.println("User Answer ID: " + userAnswerId);
 
             UserAnswer answer = gradesService.getEssayAnswerDetails(userAnswerId);
             
@@ -140,8 +121,6 @@ public class GradesController {
             }
 
         } catch (Exception e) {
-            System.out.println("❌ Error getting essay details: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
                 "message", "Lỗi khi tải chi tiết bài làm: " + e.getMessage()

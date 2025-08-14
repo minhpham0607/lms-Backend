@@ -33,13 +33,6 @@ public class FileUploadController {
                                            @RequestParam("quizId") Integer quizId,
                                            @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
-            System.out.println("=== Essay File Upload Request ===");
-            System.out.println("Course ID: " + courseId);
-            System.out.println("Quiz ID: " + quizId);
-            System.out.println("User ID: " + userDetails.getUserId());
-            System.out.println("File name: " + file.getOriginalFilename());
-            System.out.println("File size: " + file.getSize() + " bytes");
-
             // Validate file
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
@@ -74,7 +67,6 @@ public class FileUploadController {
             // Create directories if they don't exist
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
-                System.out.println("✅ Created directory: " + uploadPath.toAbsolutePath());
             }
 
             // Generate unique filename to avoid conflicts
@@ -85,8 +77,6 @@ public class FileUploadController {
             // Save file
             Path filePath = uploadPath.resolve(uniqueFilename);
             Files.copy(file.getInputStream(), filePath);
-            
-            System.out.println("✅ File saved successfully to: " + filePath.toAbsolutePath());
 
             // Return file information
             String fileUrl = "/api/upload/test/" + courseId + "/" + userDetails.getUserId() + "/" + uniqueFilename;
@@ -101,15 +91,11 @@ public class FileUploadController {
             ));
 
         } catch (IOException e) {
-            System.err.println("❌ Error uploading file: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
                 "message", "Lỗi khi upload file: " + e.getMessage()
             ));
         } catch (Exception e) {
-            System.err.println("❌ Unexpected error: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
                 "message", "Lỗi không xác định: " + e.getMessage()
@@ -127,12 +113,6 @@ public class FileUploadController {
                                              @PathVariable String filename,
                                              @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
-            System.out.println("=== Download Essay File Request ===");
-            System.out.println("Course ID: " + courseId);
-            System.out.println("User ID: " + userId);
-            System.out.println("Filename: " + filename);
-            System.out.println("Requesting User ID: " + userDetails.getUserId());
-
             // Security check: only allow users to download their own files, or instructors/admins
             if (!userDetails.getUserId().equals(userId) && 
                 !userDetails.getAuthorities().stream()
@@ -162,23 +142,17 @@ public class FileUploadController {
                 contentType = "application/octet-stream";
             }
 
-            System.out.println("✅ File found and ready for download: " + filePath.toAbsolutePath());
-
             return ResponseEntity.ok()
                 .header("Content-Type", contentType)
                 .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
                 .body(fileContent);
 
         } catch (IOException e) {
-            System.err.println("❌ Error downloading file: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
                 "message", "Lỗi khi tải file: " + e.getMessage()
             ));
         } catch (Exception e) {
-            System.err.println("❌ Unexpected error: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
                 "message", "Lỗi không xác định: " + e.getMessage()
@@ -206,16 +180,12 @@ public class FileUploadController {
     @GetMapping("/questions/{filename}")
     public ResponseEntity<?> downloadQuestionFile(@PathVariable String filename) {
         try {
-            System.out.println("=== Download Question File Request ===");
-            System.out.println("Filename: " + filename);
-
             // Build file path
             String questionDir = uploadDir + File.separator + "questions";
             Path filePath = Paths.get(questionDir, filename);
 
             // Check if file exists
             if (!Files.exists(filePath)) {
-                System.err.println("❌ File not found: " + filePath.toAbsolutePath());
                 return ResponseEntity.notFound().build();
             }
 
@@ -227,23 +197,17 @@ public class FileUploadController {
                 contentType = "application/octet-stream";
             }
 
-            System.out.println("✅ Question file found and ready for download: " + filePath.toAbsolutePath());
-
             return ResponseEntity.ok()
                 .header("Content-Type", contentType)
                 .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
                 .body(fileContent);
 
         } catch (IOException e) {
-            System.err.println("❌ Error downloading question file: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
                 "message", "Lỗi khi tải file: " + e.getMessage()
             ));
         } catch (Exception e) {
-            System.err.println("❌ Unexpected error: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
                 "message", "Lỗi không xác định: " + e.getMessage()

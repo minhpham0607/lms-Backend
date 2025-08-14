@@ -29,9 +29,6 @@ public class EnrollmentsRestController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody EnrollmentRequest request
     ) {
-        System.out.println("🔍 Debug - User authorities: " + userDetails.getAuthorities());
-        System.out.println("🔍 Debug - hasRole('student'): " + userDetails.hasRole("student"));
-        
         int userId = userDetails.getUserId(); // ✅ lấy user từ token
         boolean success = enrollmentService.enrollUserInCourse(userId, request.getCourseId());
         if (success) {
@@ -58,7 +55,6 @@ public class EnrollmentsRestController {
 
         if (principal instanceof CustomUserDetails customUser) {
             userId = customUser.getUserId();
-            System.out.println("🔍 User ID: " + userId);
         }
 
         if (userId == null) {
@@ -121,7 +117,6 @@ public class EnrollmentsRestController {
             List<EnrollmentsDTO> allEnrollments = enrollmentService.getAllEnrollments();
             return ResponseEntity.ok(allEnrollments);
         } catch (Exception e) {
-            System.err.println("❌ Error getting all enrollments: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }

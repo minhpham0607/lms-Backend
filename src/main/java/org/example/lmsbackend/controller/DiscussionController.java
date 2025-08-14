@@ -120,12 +120,6 @@ public class DiscussionController {
                                                 @RequestParam("courseId") Integer courseId,
                                                 @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
-            System.out.println("=== Discussion File Upload Request ===");
-            System.out.println("Course ID: " + courseId);
-            System.out.println("User ID: " + userDetails.getUserId());
-            System.out.println("File name: " + file.getOriginalFilename());
-            System.out.println("File size: " + file.getSize() + " bytes");
-
             // Validate file
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
@@ -175,7 +169,6 @@ public class DiscussionController {
             // Create directories if they don't exist
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
-                System.out.println("✅ Created directory: " + uploadPath.toAbsolutePath());
             }
 
             // Generate unique filename to avoid conflicts
@@ -186,8 +179,6 @@ public class DiscussionController {
             // Save file
             Path filePath = uploadPath.resolve(uniqueFilename);
             Files.copy(file.getInputStream(), filePath);
-            
-            System.out.println("✅ File saved successfully to: " + filePath.toAbsolutePath());
 
             // Return file information
             String fileUrl = "/api/discussions/download/" + courseId + "/" + userDetails.getUserId() + "/" + uniqueFilename;
@@ -202,15 +193,11 @@ public class DiscussionController {
             ));
 
         } catch (IOException e) {
-            System.err.println("❌ Error uploading file: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
                 "message", "Lỗi khi upload file: " + e.getMessage()
             ));
         } catch (Exception e) {
-            System.err.println("❌ Unexpected error: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
                 "message", "Lỗi không xác định: " + e.getMessage()
@@ -228,12 +215,6 @@ public class DiscussionController {
                                                    @PathVariable String filename,
                                                    @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
-            System.out.println("=== Download Discussion File Request ===");
-            System.out.println("Course ID: " + courseId);
-            System.out.println("User ID: " + userId);
-            System.out.println("Filename: " + filename);
-            System.out.println("Requesting User ID: " + userDetails.getUserId());
-
             // Check course access permission
             if (userDetails.hasRole("instructor") && !courseService.isInstructorOfCourse(userDetails.getUserId(), courseId)) {
                 return ResponseEntity.status(403).body(Map.of(
@@ -272,15 +253,11 @@ public class DiscussionController {
                     .body(fileContent);
 
         } catch (IOException e) {
-            System.err.println("❌ Error downloading file: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
                 "message", "Lỗi khi tải file: " + e.getMessage()
             ));
         } catch (Exception e) {
-            System.err.println("❌ Unexpected error: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
                 "message", "Lỗi không xác định: " + e.getMessage()

@@ -72,13 +72,7 @@ public class ExamSubmissionController {
     public ResponseEntity<?> checkSubmission(@PathVariable Integer quizId,
                                             @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
-            System.out.println("=== Check Submission Request ===");
-            System.out.println("Quiz ID: " + quizId);
-            System.out.println("User ID: " + (userDetails != null ? userDetails.getUserId() : "null"));
-            System.out.println("User Roles: " + (userDetails != null ? userDetails.getAuthorities() : "null"));
-            
             if (userDetails == null) {
-                System.out.println("❌ User details is null - authentication failed");
                 Map<String, Object> authResponse = new HashMap<>();
                 authResponse.put("hasSubmitted", false);
                 authResponse.put("result", null);
@@ -103,10 +97,6 @@ public class ExamSubmissionController {
 
             if (hasSubmitted) {
                 result = examSubmissionService.getUserQuizResult(userDetails.getUserId(), quizId);
-                System.out.println("✅ User has submitted. Result found: " + (result != null));
-                System.out.println("✅ User can retake: " + canRetake);
-            } else {
-                System.out.println("📝 User hasn't submitted yet");
             }
 
             // Create response map with proper null handling
@@ -121,8 +111,6 @@ public class ExamSubmissionController {
             return ResponseEntity.ok().body(response);
 
         } catch (Exception e) {
-            System.out.println("❌ Error in checkSubmission: " + e.getMessage());
-            e.printStackTrace();
             // Even if there's an error, assume user hasn't submitted yet
             // This is normal for users who haven't taken the exam
             Map<String, Object> errorResponse = new HashMap<>();

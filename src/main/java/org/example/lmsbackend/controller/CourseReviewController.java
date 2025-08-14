@@ -31,16 +31,11 @@ public class CourseReviewController {
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             Integer userId = userDetails.getUserId();
 
-            System.out.println("🎯 Getting eligible courses for review for user: " + userId);
-
             List<CourseReviewDTO> eligibleCourses = courseReviewService.getEligibleCoursesForUser(userId);
-
-            System.out.println("✅ Found " + eligibleCourses.size() + " eligible courses for review");
 
             return ResponseEntity.ok(eligibleCourses);
 
         } catch (Exception e) {
-            System.err.println("❌ Error getting eligible courses: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -54,7 +49,6 @@ public class CourseReviewController {
             return ResponseEntity.ok(reviews);
 
         } catch (Exception e) {
-            System.err.println("❌ Error getting reviews for course " + courseId + ": " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -92,7 +86,6 @@ public class CourseReviewController {
             return ResponseEntity.ok(reviews);
 
         } catch (Exception e) {
-            System.err.println("❌ Error getting instructor reviews: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -106,7 +99,6 @@ public class CourseReviewController {
             return ResponseEntity.ok(reviews);
 
         } catch (Exception e) {
-            System.err.println("❌ Error getting all reviews: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -121,17 +113,11 @@ public class CourseReviewController {
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             Integer userId = userDetails.getUserId();
 
-            System.out.println("📝 Creating/updating review for course " + request.getCourseId() + 
-                " by user " + userId);
-
             CourseReviewDTO review = courseReviewService.createOrUpdateReview(userId, request);
-
-            System.out.println("✅ Review saved successfully with rating: " + request.getRating());
 
             return ResponseEntity.ok(review);
 
         } catch (Exception e) {
-            System.err.println("❌ Error creating/updating review: " + e.getMessage());
             return ResponseEntity.badRequest()
                 .body(Map.of("error", e.getMessage()));
         }
@@ -146,7 +132,6 @@ public class CourseReviewController {
             return ResponseEntity.ok().build();
 
         } catch (Exception e) {
-            System.err.println("❌ Error deleting review " + reviewId + ": " + e.getMessage());
             return ResponseEntity.badRequest()
                 .body(Map.of("error", e.getMessage()));
         }

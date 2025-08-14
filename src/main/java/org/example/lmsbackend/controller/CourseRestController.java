@@ -57,9 +57,6 @@ public class CourseRestController {
             @RequestPart("course") CourseDTO courseDTO,
             @RequestPart("image") MultipartFile imageFile) {
 
-        System.out.println("📥 Received courseDTO: " + courseDTO);
-        System.out.println("📷 Received file: " + imageFile.getOriginalFilename());
-
         try {
             boolean created = courseService.createCourse(courseDTO, imageFile);
             if (!created) {
@@ -68,7 +65,6 @@ public class CourseRestController {
             }
             return ResponseEntity.ok(Map.of("message", "Tạo khóa học thành công"));
         } catch (Exception e) {
-            e.printStackTrace(); // xem lỗi cụ thể ở terminal
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Lỗi: " + e.getMessage()));
         }
@@ -89,11 +85,7 @@ public class CourseRestController {
             if (isInstructor) {
                 instructorId = customUser.getId(); // ✅ lấy đúng userId
             }
-            System.out.println("🔍 User ID: " + customUser.getId());
         }
-
-        System.out.printf("getCourses with: categoryId=%s, instructorId=%s, status=%s%n",
-                categoryId, instructorId, status);
 
         List<Course> courses = courseService.getCourses(categoryId, instructorId, status);
         return ResponseEntity.ok(courses);
@@ -130,7 +122,6 @@ public class CourseRestController {
             }
         } catch (Exception e) {
             // 🔸 Lỗi không mong muốn khác
-            System.err.println("❌ Unexpected error in deleteCourse controller: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("An unexpected error occurred while deleting the course.");
         }
@@ -187,8 +178,6 @@ public class CourseRestController {
                 .body(Map.of("message", "Bạn không có quyền truy cập khóa học này"));
                 
         } catch (Exception e) {
-            System.err.println("❌ Error getting course: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("message", "Lỗi server khi lấy thông tin khóa học"));
         }
